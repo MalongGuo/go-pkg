@@ -48,11 +48,13 @@ func Test_TokenM_Table(t *testing.T) {
 	for _, c := range cases {
 		switch tc := c.(type) {
 		case testCase[string]:
-			tokenStr, err := GetTokeStr[string](tc.secretKey, tc.data, time.Now().AddDate(0, 0, 1))
+			signer := NewTokenM[string](tc.secretKey)
+			tokenStr, err := signer.Sign(tc.data, time.Now().AddDate(0, 0, 1))
 			if err != nil {
 				t.Fatalf("%s: sign token: %v", tc.name, err)
 			}
-			got, err := GetTokenMData[string](tokenStr, tc.parseKey)
+			parser := NewTokenM[string](tc.parseKey)
+			got, err := parser.Parse(tokenStr)
 			if tc.wantErr {
 				if err == nil {
 					t.Fatalf("%s: expected error, got nil", tc.name)
@@ -66,11 +68,13 @@ func Test_TokenM_Table(t *testing.T) {
 				t.Fatalf("%s: got=%v want=%v", tc.name, got, tc.data)
 			}
 		case testCase[payload]:
-			tokenStr, err := GetTokeStr[payload](tc.secretKey, tc.data, time.Now().AddDate(0, 0, 1))
+			signer := NewTokenM[payload](tc.secretKey)
+			tokenStr, err := signer.Sign(tc.data, time.Now().AddDate(0, 0, 1))
 			if err != nil {
 				t.Fatalf("%s: sign token: %v", tc.name, err)
 			}
-			got, err := GetTokenMData[payload](tokenStr, tc.parseKey)
+			parser := NewTokenM[payload](tc.parseKey)
+			got, err := parser.Parse(tokenStr)
 			if tc.wantErr {
 				if err == nil {
 					t.Fatalf("%s: expected error, got nil", tc.name)
