@@ -1,11 +1,9 @@
 package ws
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"net/http"
-	"sync"
 
 	"github.com/gorilla/websocket"
 )
@@ -21,49 +19,6 @@ type WebsocketMI interface {
 	GetConnByID(userID int64) (*websocket.Conn, error)
 }
 
-type WebsocketM struct {
-	sync.RWMutex
-	UserMap map[int64]*websocket.Conn
-}
-
-func (ws *WebsocketM) SetData(r *http.Request) (*http.Request, error) {
-	return r.WithContext(context.WithValue(r.Context(), "user_id", int64(1))), nil
-}
-
-func (ws *WebsocketM) GetData(r *http.Request) (any, error) {
-	return r.Context().Value("user_id"), nil
-}
-
-func (ws *WebsocketM) NewConn(conn *websocket.Conn, data any) error {
-	fmt.Println(data)
-	ws.Lock()
-	defer ws.Unlock()
-	ws.UserMap[data.(int64)] = conn
-	return nil
-}
-
-func (ws *WebsocketM) CheckAuth(r *http.Request) (*http.Request, error) {
-
-	return r, nil
-}
-
-func (ws *WebsocketM) WriteMessageTo(conn *websocket.Conn, messageType int, p []byte) error {
-	return conn.WriteMessage(messageType, p)
-}
-
-func (ws *WebsocketM) GetConnByID(userID int64) (*websocket.Conn, error) {
-	ws.RLock()
-	defer ws.RUnlock()
-
-	return ws.UserMap[userID], nil
-}
-
-func (ws *WebsocketM) ReceiveMessage(conn *websocket.Conn, messageType int, p []byte) error {
-	err := ws.WriteMessageTo(conn, messageType, p)
-	return err
-}
-
-var _ WebsocketMI = (*WebsocketM)(nil)
 
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
