@@ -1,61 +1,88 @@
 package tokenm
 
 import (
-	"fmt"
 	"testing"
+	"time"
 )
 
-// Test_GetTokeStr_And_Parse_String 生成并解析包含字符串数据的 Token
-func Test_GetTokeStr_And_Parse_String(t *testing.T) {
-	secret := "secret-123"
-	data := "hello"
+// 表驱动测试覆盖字符串、结构体与错误密钥场景
+func Test_TokenM_Table(t *testing.T) {
+	type (
+		payload struct {
+			Name string
+			ID   int
+		}
+		testCase[T comparable] struct {
+			name      string
+			secretKey string
+			data      T
+			parseKey  string
+			wantErr   bool
+		}
+	)
 
-	tokenStr, err := GetTokeStr[string](secret, data)
-	if err != nil {
-		t.Fatalf("sign token: %v", err)
+	cases := []any{
+		testCase[string]{
+			name:      "string payload ok",
+			secretKey: "secret-123",
+			data:      "hello",
+			parseKey:  "secret-123",
+			wantErr:   false,
+		},
+		testCase[payload]{
+			name:      "struct payload ok",
+			secretKey: "secret-xyz",
+			data:      payload{Name: "bob", ID: 7},
+			parseKey:  "secret-xyz",
+			wantErr:   false,
+		},
+		testCase[string]{
+			name:      "wrong secret returns error",
+			secretKey: "secret-a",
+			data:      "x",
+			parseKey:  "wrong-secret",
+			wantErr:   true,
+		},
 	}
 
-	got, err := GetTokenMData[string](tokenStr, secret)
-	if err != nil {
-		t.Fatalf("parse token: %v", err)
-	}
-	fmt.Println(tokenStr, got)
-	if got != data {
-		t.Fatalf("unexpected data: got=%q want=%q", got, data)
-	}
-}
-
-// Test_GetTokeStr_And_Parse_Struct 生成并解析包含结构体数据的 Token
-func Test_GetTokeStr_And_Parse_Struct(t *testing.T) {
-	type payload struct {
-		Name string
-		ID   int
-	}
-	secret := "secret-xyz"
-	data := payload{Name: "bob", ID: 7}
-
-	tokenStr, err := GetTokeStr[payload](secret, data)
-	if err != nil {
-		t.Fatalf("sign token: %v", err)
-	}
-
-	got, err := GetTokenMData[payload](tokenStr, secret)
-	if err != nil {
-		t.Fatalf("parse token: %v", err)
-	}
-	if got != data {
-		t.Fatalf("unexpected data: got=%+v want=%+v", got, data)
-	}
-}
-
-// Test_Parse_BadSecret 使用错误密钥解析应返回错误
-func Test_Parse_BadSecret(t *testing.T) {
-	secret := "secret-a"
-	tokenStr, err := GetTokeStr[string](secret, "x")
-	if err != nil {
-		t.Fatalf("sign token: %v", err)
-	}
-	if _, err := GetTokenMData[string](tokenStr, "wrong-secret"); err == nil {
-		t.Fatalf("expected error when using wrong secret")
+	for _, c := range cases {
+		switch tc := c.(type) {
+		case testCase[string]:
+			tokenStr, err := GetTokeStr[string](tc.secretKey, tc.data, time.Now().AddDate(0, 0, 1))
+			if err != nil {
+				t.Fatalf("%s: sign token: %v", tc.name, err)
+			}
+			got, err := GetTokenMData[string](tokenStr, tc.parseKey)
+			if tc.wantErr {
+				if err == nil {
+					t.Fatalf("%s: expected error, got nil", tc.name)
+				}
+				continue
+			}
+			if err != nil {
+				t.Fatalf("%s: parse token: %v", tc.name, err)
+			}
+			if got != tc.data {
+				t.Fatalf("%s: got=%v want=%v", tc.name, got, tc.data)
+			}
+		case testCase[payload]:
+			tokenStr, err := GetTokeStr[payload](tc.secretKey, tc.data, time.Now().AddDate(0, 0, 1))
+			if err != nil {
+				t.Fatalf("%s: sign token: %v", tc.name, err)
+			}
+			got, err := GetTokenMData[payload](tokenStr, tc.parseKey)
+			if tc.wantErr {
+				if err == nil {
+					t.Fatalf("%s: expected error, got nil", tc.name)
+				}
+				continue
+			}
+			if err != nil {
+				t.Fatalf("%s: parse token: %v", tc.name, err)
+			}
+			if got != tc.data {
+				t.Fatalf("%s: got=%+v want=%+v", tc.name, got, tc.data)
+			}
+		}
 	}
 }
