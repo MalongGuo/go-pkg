@@ -9,6 +9,13 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+// 使用自定义的上下文键类型, 避免与其他包的键冲突
+type contextKey int
+
+const (
+    ctxKeyUserID contextKey = iota
+)
+
 // WebsocketM 测试用的 websocket 管理器实现
 type WebsocketM struct {
 	sync.RWMutex
@@ -17,12 +24,12 @@ type WebsocketM struct {
 
 // SetData 设置请求数据
 func (ws *WebsocketM) SetData(r *http.Request) (*http.Request, error) {
-	return r.WithContext(context.WithValue(r.Context(), "user_id", int64(1))), nil
+	return r.WithContext(context.WithValue(r.Context(), ctxKeyUserID, int64(1))), nil
 }
 
 // GetData 获取请求数据
 func (ws *WebsocketM) GetData(r *http.Request) (any, error) {
-	return r.Context().Value("user_id"), nil
+	return r.Context().Value(ctxKeyUserID), nil
 }
 
 // NewConn 创建新连接

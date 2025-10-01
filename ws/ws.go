@@ -19,7 +19,6 @@ type WebsocketMI interface {
 	GetConnByID(userID int64) (*websocket.Conn, error)
 }
 
-
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		return true
