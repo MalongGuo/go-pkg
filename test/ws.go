@@ -1,4 +1,4 @@
-package ws
+package test
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/MalongGuo/go-pkg/ws"
 	"github.com/gorilla/websocket"
 )
 
@@ -65,4 +66,4 @@ func (ws *WebsocketM) ReceiveMessage(conn *websocket.Conn, messageType int, p []
 }
 
 // 确保 WebsocketM 实现了 WebsocketMI 接口
-var _ WebsocketMI = (*WebsocketM)(nil)
+var _ ws.WebsocketMI = (*WebsocketM)(nil)
